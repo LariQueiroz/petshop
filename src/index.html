@@ -1,0 +1,141 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="./output.css" rel="stylesheet">
+</head>
+
+<body class="bg-white text-black">
+
+  <header class="bg-green-600 text-white p-4 flex justify-between items-center">
+    
+    <h1 class="text-2xl font-bold">🐾 Petshop</h1>
+
+    <input id="busca" placeholder="Buscar..."
+      class="px-2 py-1 rounded text-black">
+
+    <button class="bg-black px-3 py-1 rounded hover:bg-gray-800">
+      Cadastrar
+    </button>
+
+  </header>
+
+  <nav class="bg-black text-white p-2 flex justify-center space-x-4">
+    <span class="hover:text-green-400 cursor-pointer">Gatos</span>
+    <span class="hover:text-green-400 cursor-pointer">Cachorros</span>
+    <span class="hover:text-green-400 cursor-pointer">Pássaros</span>
+    <span class="hover:text-green-400 cursor-pointer">Peixes</span>
+    <span class="hover:text-green-400 cursor-pointer">Outros</span>
+  </nav>
+
+  <div class="p-6">
+
+    <div class="bg-gray-100 p-4 rounded shadow mb-6">
+      <h2 class="text-green-700 font-bold mb-2">Nova Categoria</h2>
+
+      <input id="nome" placeholder="Nome"
+        class="border p-2 w-full mb-2">
+
+      <input id="descricao" placeholder="Descrição"
+        class="border p-2 w-full mb-2">
+
+      <button onclick="salvar()"
+        class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-800">
+        Salvar
+      </button>
+    </div>
+
+    <div>
+      <h2 class="text-green-700 font-bold mb-2">Categorias</h2>
+      <ul id="lista" class="space-y-2"></ul>
+    </div>
+
+  </div>
+
+<script>
+const api = "http://localhost:8080/api/categorias";
+
+let editandoId = null;
+
+function listar() {
+  fetch(api)
+    .then(res => res.json())
+    .then(dados => {
+      const lista = document.getElementById("lista");
+      const busca = document.getElementById("busca").value.toLowerCase();
+
+      lista.innerHTML = "";
+
+      dados
+      .filter(c => c.nome.toLowerCase().includes(busca))
+      .forEach(c => {
+        lista.innerHTML += `
+          <li class="border p-3 rounded flex justify-between items-center">
+            <div>
+              <strong>${c.nome}</strong><br>
+              <small>${c.descricao || ""}</small>
+            </div>
+
+            <div class="space-x-2">
+              <button onclick="editar(${c.id_categoria}, '${c.nome}', '${c.descricao || ""}')"
+                class="bg-green-600 text-white px-2 py-1 rounded">
+                Editar
+              </button>
+
+              <button onclick="deletar(${c.id_categoria})"
+                class="bg-black text-white px-2 py-1 rounded">
+                Excluir
+              </button>
+            </div>
+          </li>
+        `;
+      });
+    });
+}
+
+function salvar() {
+  const nome = document.getElementById("nome").value;
+  const descricao = document.getElementById("descricao").value;
+
+  if (editandoId) {
+    fetch(`${api}/${editandoId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome, descricao })
+    })
+    .then(() => {
+      editandoId = null;
+      listar();
+    });
+  } else {
+    fetch(api, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome, descricao })
+    })
+    .then(() => listar());
+  }
+
+  document.getElementById("nome").value = "";
+  document.getElementById("descricao").value = "";
+}
+
+function editar(id, nome, descricao) {
+  document.getElementById("nome").value = nome;
+  document.getElementById("descricao").value = descricao;
+  editandoId = id;
+}
+
+function deletar(id) {
+  fetch(`${api}/${id}`, { method: "DELETE" })
+    .then(() => listar());
+}
+
+document.getElementById("busca").addEventListener("input", listar);
+
+listar();
+</script>
+
+</body>
+</html>
