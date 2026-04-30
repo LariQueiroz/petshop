@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link href="./output.css" rel="stylesheet">
+</head>
+
+<body class="bg-white text-black p-6">
+
+<h1 class="text-2xl font-bold text-green-700 mb-4">Produtos</h1>
+
+<div id="produtos" class="grid grid-cols-3 gap-4"></div>
+
+<script>
+const api = "http://localhost:8080/api/produtos";
+
+// pegar ID da URL
+const params = new URLSearchParams(window.location.search);
+const categoriaId = params.get("categoria");
+
+async function carregarProdutos() {
+  const res = await fetch(`${api}/categoria/${categoriaId}`);
+  const produtos = await res.json();
+
+  const div = document.getElementById("produtos");
+  div.innerHTML = "";
+
+  produtos.forEach(p => {
+    div.innerHTML += `
+      <div class="border p-4 rounded shadow hover:scale-105 transition">
+        <h2 class="font-bold">${p.nome}</h2>
+        <p class="text-sm">${p.descricao || ""}</p>
+
+        <button onclick="verProduto(${p.id})"
+          class="mt-2 bg-green-600 text-white px-3 py-1 rounded">
+          Ver Produto
+        </button>
+      </div>
+    `;
+  });
+}
+
+function verProduto(id) {
+  window.location.href = `produto.html?id=${id}`;
+}
+
+carregarProdutos();
+</script>
+
+</body>
+</html>

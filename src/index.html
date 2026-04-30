@@ -57,46 +57,63 @@
 const api = "http://localhost:8080/api/categorias";
 
 let editandoId = null;
+let categoriasCache = []; // guarda dados para reutilizar
 
 function listar() {
   fetch(api)
     .then(res => res.json())
     .then(dados => {
-      const lista = document.getElementById("lista");
-      const busca = document.getElementById("busca").value.toLowerCase();
+      categoriasCache = dados;
+      renderizarLista(dados);
+    });
+}
 
-      lista.innerHTML = "";
+function renderizarLista(dados) {
+  const lista = document.getElementById("lista");
+  const busca = document.getElementById("busca").value.toLowerCase();
 
-      dados
-      .filter(c => c.nome.toLowerCase().includes(busca))
-      .forEach(c => {
-        lista.innerHTML += `
-          <li class="border p-3 rounded flex justify-between items-center">
-            <div>
-              <strong>${c.nome}</strong><br>
-              <small>${c.descricao || ""}</small>
-            </div>
+  lista.innerHTML = "";
 
-            <div class="space-x-2">
-              <button onclick="editar(${c.id_categoria}, '${c.nome}', '${c.descricao || ""}')"
-                class="bg-green-600 text-white px-2 py-1 rounded">
-                Editar
-              </button>
+  dados
+    .filter(c => c.nome.toLowerCase().includes(busca))
+    .forEach(c => {
+      lista.innerHTML += `
+        <li class="border p-3 rounded flex justify-between items-center hover:bg-gray-50">
+          
+          <div>
+            <a href="produtos.html?categoria=${c.id_categoria}" 
+               class="text-green-700 font-bold hover:underline">
+              ${c.nome}
+            </a>
+            <br>
+            <small>${c.descricao || ""}</small>
+          </div>
 
-              <button onclick="deletar(${c.id_categoria})"
-                class="bg-black text-white px-2 py-1 rounded">
-                Excluir
-              </button>
-            </div>
-          </li>
-        `;
-      });
+          <div class="space-x-2">
+            <button onclick="editar(${c.id_categoria}, '${c.nome}', '${c.descricao || ""}')"
+              class="bg-green-600 text-white px-2 py-1 rounded hover:bg-green-800">
+              Editar
+            </button>
+
+            <button onclick="deletar(${c.id_categoria})"
+              class="bg-black text-white px-2 py-1 rounded hover:bg-gray-800">
+              Excluir
+            </button>
+          </div>
+
+        </li>
+      `;
     });
 }
 
 function salvar() {
   const nome = document.getElementById("nome").value;
   const descricao = document.getElementById("descricao").value;
+
+  if (!nome) {
+    alert("Digite um nome!");
+    return;
+  }
 
   if (editandoId) {
     fetch(`${api}/${editandoId}`, {
@@ -117,23 +134,52 @@ function salvar() {
     .then(() => listar());
   }
 
-  document.getElementById("nome").value = "";
-  document.getElementById("descricao").value = "";
+  limparCampos();
 }
 
 function editar(id, nome, descricao) {
   document.getElementById("nome").value = nome;
   document.getElementById("descricao").value = descricao;
   editandoId = id;
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function deletar(id) {
+  if (!confirm("Tem certeza que deseja excluir?")) return;
+
   fetch(`${api}/${id}`, { method: "DELETE" })
     .then(() => listar());
 }
 
-document.getElementById("busca").addEventListener("input", listar);
+function limparCampos() {
+  document.getElementById("nome").value = "";
+  document.getElementById("descricao").value = "";
+}
 
+// 🔍 Busca em tempo real
+document.getElementById("busca").addEventListener("input", () => {
+  renderizarLista(categoriasCache);
+});
+
+// 🔹 Clique nas categorias do menu (topo)
+document.querySelectorAll("nav span").forEach(span => {
+  span.addEventListener("click", () => {
+    const nomeCategoria = span.innerText.toLowerCase();
+
+    const categoria = categoriasCache.find(c =>
+      c.nome.toLowerCase().includes(nomeCategoria)
+    );
+
+    if (categoria) {
+      window.location.href = `produtos.html?categoria=${categoria.id_categoria}`;
+    } else {
+      alert("Categoria não encontrada no banco!");
+    }
+  });
+});
+
+// carregar ao iniciar
 listar();
 </script>
 
